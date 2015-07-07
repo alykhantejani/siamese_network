@@ -30,16 +30,16 @@ learning_rate = params.learning_rate
 
 --Load model and criterion
 
--- retrieve parameters and gradients (Global)
+-- retrieve a view (same memory) of the parameters and gradients of these (wrt loss) of the model (Global)
 parameters, grad_parameters = model:getParameters()
 
-function train(dataset)
+function train_one_epoch(dataset)
       
     local time = sys.clock()
     --train one epoch of the dataset
     print("training epoch #" .. epoch)
    
-    for mini_batch_start = 1, dataset:size(), batch_size do 
+    for mini_batch_start = 1, dataset:size(), batch_size do --for each mini-batch
         xlua.progress(mini_batch, dataset:size()) --display progress
 
         local inputs = {}
@@ -52,11 +52,15 @@ function train(dataset)
             table.insert(labels, label)
         end
 
-        --create a closure to evaluate df/dX where X are the model parameters
+        --create a closure to evaluate df/dX where x are the model parameters at a given point
+        --and df/dx is the gradient of the loss wrt to thes parameters
+
         local func_eval = 
         function(x)
+
+                --update the model parameters (copy x in to parameters)
                 if x ~= parameters then
-                    parameters:copy(x) --update the model parameters (copy x in to parameters)
+                    parameters:copy(x) 
                 end
 
                 grad_parameters:zero() --reset gradients
@@ -79,11 +83,16 @@ function train(dataset)
 
                 return avg_error, grad_parameters
         end
+
+
         config = {learningRate = opt.learningRate,
                   weightDecay = opt.weightDecay,
                   momentum = opt.momentum,
                   learningRateDecay = 5e-7}
+
+        --This function updates the global parameters variable (which is a view on the models parameters)
         optim.sgd(func_eval, parameters, config)
+
     end
 
     -- time taken

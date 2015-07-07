@@ -2,21 +2,20 @@ require 'paths'
 require 'torch'
 
 mnist = {}
+mnist.remote_path = 'https://s3.amazonaws.com/torch7/data/mnist.t7.tgz'
+mnist.root_folder = 'mnist.t7'
+mnist.trainset_path = paths.concat(mnist.path_dataset, 'train_32x32.t7')
+mnist.testset_path = paths.concat(mnist.path_dataset, 'test_32x32.t7')
+
 
 function mnist.download(dataset)
-    dataset = {}
-    dataset.remote_path = 'https://s3.amazonaws.com/torch7/data/mnist.t7.tgz'
-    dataset.root_folder = 'mnist.t7'
-    dataset.trainset_path = paths.concat(mnist.path_dataset, 'train_32x32.t7')
-    dataset.testset_path = paths.concat(mnist.path_dataset, 'test_32x32.t7')
-
-   if not paths.filep(dataset.trainset_path) or not paths.filep(dataset.testset_path) then
-      local tarfile = paths.basename(dataset.remote_path)
-      os.execute('wget ' .. dataset.remote_path .. '; ' .. 'tar xvf ' .. tar .. '; rm ' .. tar)
+   if not paths.filep(mnist.trainset_path) or not paths.filep(mnist.testset_path) then
+      local tarfile = paths.basename(mnist.remote_path)
+      os.execute('wget ' .. mnist.remote_path .. '; ' .. 'tar xvf ' .. tar .. '; rm ' .. tar)
    end
 end
 
-function mnist.load_normalized_dataset(filename)
+function mnist.load_normalized_dataset(filename, mean_, std_)
     local file = torch.load(filename, 'ascii')
     
     local dataset = {}
@@ -27,7 +26,9 @@ function mnist.load_normalized_dataset(filename)
     local mean = mean_ or dataset.data:mean()
     dataset.data:add(-mean)
     dataset.data:mul(1.0/std)
-    return mean, std
+
+    dataset.std = std
+    dataset.mean = mean
     
     function dataset:size()
       return dataset.data:size(1)
@@ -55,17 +56,17 @@ function mnist.load_normalized_dataset(filename)
                           end })
 end
 
-function mnist.load_siamese_dataset(filename)
-    local file = torch.load(filename, 'ascii')
-    
-    data = file.data:type(torch.getdefaulttensortype())
-    labels = file.labels
+function mnist.load_siamese_dataset(filename, mean_, std_)
+  local file = torch.load(filename, 'ascii')
+  
+  data = file.data:type(torch.getdefaulttensortype())
+  labels = file.labels
 
-    local std = std_ or data:std()
-    local mean = mean_ or data:mean()
-    data:add(-mean)
-    data:mul(1.0/std)
-    return mean, std
+  local std = std_ or data:std()
+  local mean = mean_ or data:mean()
+  data:add(-mean)
+  data:mul(1.0/std)
+    
     
   -- now we make the pairs
 
@@ -96,6 +97,8 @@ function mnist.load_siamese_dataset(filename)
   local dataset = {}
   dataset.data = paired_data
   dataset.labels = paired_data_labels
+  dataset.std = std
+  dataset.mean = mean
 
   function dataset:size()
     return dataset.data:size(1)
