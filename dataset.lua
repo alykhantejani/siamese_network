@@ -3,9 +3,9 @@ require 'torch'
 
 mnist = {}
 mnist.remote_path = 'https://s3.amazonaws.com/torch7/data/mnist.t7.tgz'
-mnist.root_folder = 'mnist.t7'
-mnist.trainset_path = paths.concat(mnist.path_dataset, 'train_32x32.t7')
-mnist.testset_path = paths.concat(mnist.path_dataset, 'test_32x32.t7')
+mnist.root_folder = 'data/mnist.t7'
+mnist.trainset_path = paths.concat(mnist.root_folder, 'train_32x32.t7')
+mnist.testset_path = paths.concat(mnist.root_folder, 'test_32x32.t7')
 
 
 function mnist.download(dataset)
@@ -24,8 +24,8 @@ function mnist.load_normalized_dataset(filename, mean_, std_)
 
     local std = std_ or dataset.data:std()
     local mean = mean_ or dataset.data:mean()
-    dataset.data:add(-mean)
-    dataset.data:mul(1.0/std)
+    dataset.data = dataset.data:add(-mean)
+    dataset.data = dataset.data:mul(1.0/std)
 
     dataset.std = std
     dataset.mean = mean
@@ -64,28 +64,23 @@ function mnist.load_siamese_dataset(filename, mean_, std_)
 
   local std = std_ or data:std()
   local mean = mean_ or data:mean()
-  data:add(-mean)
-  data:mul(1.0/std)
+  data = data:add(-mean)
+  data = data:mul(1.0/std)
     
-    
-  -- now we make the pairs
-
-  data = dataset.data
-  labels = dataset.labels
   shuffle = torch.randperm(data:size(1))
   max_index = data:size(1)
   if max_index % 2 ~= 0 then
     max_index = max_index - 1
   end
 
-
+  -- now we make the pairs (tensor of size (30000,2,1,32,32) for training data)
   paired_data = torch.Tensor(max_index/2, 2, data:size(2), data:size(3), data:size(4))
   paired_data_labels = torch.Tensor(max_index/2)
   index = 1
 
   for i = 1,max_index,2 do
-    paired_data[index][i] = data[shuffle[i]]:clone()
-    paired_data[index][i + 1] = data[shuffle[i + 1]]:clone()
+    paired_data[index][1] = data[shuffle[i]]:clone()
+    paired_data[index][2] = data[shuffle[i + 1]]:clone()
     if labels[shuffle[i]] == labels[shuffle[i+1]] then
       paired_data_labels[index] = 1
     else

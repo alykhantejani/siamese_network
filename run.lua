@@ -16,22 +16,37 @@ cmd:option("-training_data", mnist.trainset_path, "training data (.t7) file")
 cmd:option("-log", "out.log", "output log file")
 cmd:option("-batch_size", 50, "batch size")
 cmd:option("-learning_rate", 0.001, "learning_rate")
+--cmd:option("-weight_decay", 0, "weight decay")
+cmd:option("-momentum", 0.9, "momentum")
+cmd:option("-max_epochs", 2, "maximum epochs")
 cmd:option("-snapshot_dir", "", "snapshot directory")
 
 params = cmd:parse(arg)
 
-logger = optim.Logger(params.log)
 training_data = mnist.load_normalized_dataset(params.training_data)
 
 epoch = 0
 batch_size = params.batch_size
-learning_rate = params.learning_rate
-
-
 --Load model and criterion
 
 -- retrieve a view (same memory) of the parameters and gradients of these (wrt loss) of the model (Global)
 parameters, grad_parameters = model:getParameters()
+
+
+print("loading dataset...")
+local mnist_dataset = mnist.load_siamese_dataset("/Users/aly/workspace/torch_sandbox/siamese_network/data/mnist.t7/train_32x32.t7")
+print("dataset loaded")
+
+--train(dataset)
+
+
+
+function train(dataset)
+    for i in 1, params.max_epochs do
+        --add random shuffling here
+        train(dataset)
+    end
+end
 
 function train_one_epoch(dataset)
       
@@ -85,9 +100,9 @@ function train_one_epoch(dataset)
         end
 
 
-        config = {learningRate = opt.learningRate,
-                  weightDecay = opt.weightDecay,
-                  momentum = opt.momentum,
+        config = {learningRate = params.learning_rate,
+                 -- weightDecay = params.weight_decay,
+                  momentum = params.momentum,
                   learningRateDecay = 5e-7}
 
         --This function updates the global parameters variable (which is a view on the models parameters)
