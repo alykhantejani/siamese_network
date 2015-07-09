@@ -1,4 +1,3 @@
-require 'imge'
 require 'nn'
 
 --after a convolution the output width and height is

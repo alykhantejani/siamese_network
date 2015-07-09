@@ -3,6 +3,7 @@ require 'nn'
 require 'optim'
 require 'image'
 require 'dataset'
+require 'model'
 
 
 -----------------------------------------------------------------------------
@@ -23,8 +24,6 @@ cmd:option("-snapshot_dir", "", "snapshot directory")
 
 params = cmd:parse(arg)
 
-training_data = mnist.load_normalized_dataset(params.training_data)
-
 epoch = 0
 batch_size = params.batch_size
 --Load model and criterion
@@ -33,36 +32,30 @@ batch_size = params.batch_size
 parameters, grad_parameters = model:getParameters()
 
 
-print("loading dataset...")
-local mnist_dataset = mnist.load_siamese_dataset("/Users/aly/workspace/torch_sandbox/siamese_network/data/mnist.t7/train_32x32.t7")
-print("dataset loaded")
 
---train(dataset)
-
-
-
-function train(dataset)
-    for i in 1, params.max_epochs do
+function train(data)
+    for i = 1, params.max_epochs do
         --add random shuffling here
-        train(dataset)
+        train_one_epoch(data)
     end
 end
 
-function train_one_epoch(dataset)
+function train_one_epoch(data)
       
     local time = sys.clock()
     --train one epoch of the dataset
     print("training epoch #" .. epoch)
+    print("dataset size is " .. data:size())
    
-    for mini_batch_start = 1, dataset:size(), batch_size do --for each mini-batch
-        xlua.progress(mini_batch, dataset:size()) --display progress
+    for mini_batch_start = 1, data:size(), batch_size do --for each mini-batch
+        xlua.progress(mini_batch, data:size()) --display progress
 
         local inputs = {}
         local labels = {}
         --create a mini_batch
-        for i = mini_batch_start, math.min(mini_batch_start + batch_size - 1, dataset:size()) do 
-            local input = dataset[i][1]:clone() -- the tensor containing two images 
-            local label = dataset[i][2]:clone() -- +/- 1
+        for i = mini_batch_start, math.min(mini_batch_start + batch_size - 1, data:size()) do 
+            local input = data[i][1]:clone() -- the tensor containing two images 
+            local label = data[i][2]:clone() -- +/- 1
             table.insert(inputs, input)
             table.insert(labels, label)
         end
@@ -112,8 +105,17 @@ function train_one_epoch(dataset)
 
     -- time taken
     time = sys.clock() - time
-    time = time / dataset:size()
-    print("time taken for 1 epoch = " .. (time * 1000) .. "ms, time taken to learn 1 sample = " .. ((time/dataset:size())*1000) .. 'ms')
+    time = time / data:size()
+    print("time taken for 1 epoch = " .. (time * 1000) .. "ms, time taken to learn 1 sample = " .. ((time/data:size())*1000) .. 'ms')
 
     epoch = epoch + 1
 end
+
+
+print("loading dataset...")
+mnist_dataset = mnist.load_siamese_dataset("/Users/aly/workspace/torch_sandbox/siamese_network/data/mnist.t7/train_32x32.t7")
+print("dataset loaded")
+print("mnist dataset size is " ..  mnist_dataset:size())
+train(mnist_dataset)
+
+

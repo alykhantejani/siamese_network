@@ -54,6 +54,7 @@ function mnist.load_normalized_dataset(filename, mean_, std_)
                           local example = {input, label_vector}
                           return example
                           end })
+    return dataset
 end
 
 function mnist.load_siamese_dataset(filename, mean_, std_)
@@ -118,4 +119,5 @@ function mnist.load_siamese_dataset(filename, mean_, std_)
                         return example
                         end })
 
+  return dataset
 end
