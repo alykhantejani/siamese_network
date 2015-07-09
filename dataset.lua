@@ -24,8 +24,8 @@ function mnist.load_normalized_dataset(filename, mean_, std_)
 
     local std = std_ or dataset.data:std()
     local mean = mean_ or dataset.data:mean()
-    dataset.data = dataset.data:add(-mean)
-    dataset.data = dataset.data:mul(1.0/std)
+    dataset.data:add(-mean);
+    dataset.data:mul(1.0/std);
 
     dataset.std = std
     dataset.mean = mean
@@ -65,8 +65,8 @@ function mnist.load_siamese_dataset(filename, mean_, std_)
 
   local std = std_ or data:std()
   local mean = mean_ or data:mean()
-  data = data:add(-mean)
-  data = data:mul(1.0/std)
+  data:add(-mean);
+  data:mul(1.0/std);
     
   shuffle = torch.randperm(data:size(1))
   max_index = data:size(1)

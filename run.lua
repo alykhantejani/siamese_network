@@ -40,20 +40,21 @@ function train(data)
     end
 end
 
-function train_one_epoch(data)
-      
+function train_one_epoch(dataset)
+    data = dataset.data
+
     local time = sys.clock()
     --train one epoch of the dataset
     print("training epoch #" .. epoch)
-    print("dataset size is " .. data:size())
-   
-    for mini_batch_start = 1, data:size(), batch_size do --for each mini-batch
-        xlua.progress(mini_batch, data:size()) --display progress
+    
+    mini_batch_num = 1
+    for mini_batch_start = 1, data:size(1), batch_size do --for each mini-batch
+        xlua.progress(mini_batch_num, data:size(1)) --display progress
 
         local inputs = {}
         local labels = {}
         --create a mini_batch
-        for i = mini_batch_start, math.min(mini_batch_start + batch_size - 1, data:size()) do 
+        for i = mini_batch_start, math.min(mini_batch_start + batch_size - 1, data:size(1)) do 
             local input = data[i][1]:clone() -- the tensor containing two images 
             local label = data[i][2]:clone() -- +/- 1
             table.insert(inputs, input)
@@ -117,5 +118,4 @@ mnist_dataset = mnist.load_siamese_dataset("/Users/aly/workspace/torch_sandbox/s
 print("dataset loaded")
 print("mnist dataset size is " ..  mnist_dataset:size())
 train(mnist_dataset)
-
 
