@@ -22,8 +22,7 @@ encoder:add(nn.Linear(10, 2))
 --The siamese model
 siamese_encoder = nn.ParallelTable()
 siamese_encoder:add(encoder)
-siamese_encoder:add(encoder:clone('weight','bias')) --clone the encoder and share the weight, bias
-
+siamese_encoder:add(encoder:clone('weight','bias', 'gradWeight','gradBias')) --clone the encoder and share the weight, bias. Must also share the gradWeight and gradBias
 
 
 --The siamese model (inputs will be Tensors of shape (2, channel, height, width))
