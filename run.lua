@@ -32,9 +32,21 @@ batch_size = params.batch_size
 parameters, grad_parameters = model:getParameters();
 
 function train(data)
+    local saved_criterion = false;
     for i = 1, params.max_epochs do
         --add random shuffling here
         train_one_epoch(data)
+
+        if params.snapshot ~= nil && epoch % params.snapshot == 0 then -- epoch is global (gotta love lua :p)
+            local filename = paths.concat(params.save, "_epoch_" .. epoch .. ".net")
+            os.execute('mkdir -p ' .. sys.dirname(filename))
+            torch.save(filename, model)        
+            --must save std, mean and criterion?
+            if not saved_criterion then
+                local criterion_filename = paths.concat(params.save, "_criterion.net")
+                torch.save(criterion_filename, criterion)
+            end
+        end
     end
 end
 
@@ -99,14 +111,9 @@ function train_one_epoch(dataset)
     time = sys.clock() - time
     print("time taken for 1 epoch = " .. (time * 1000) .. "ms, time taken to learn 1 sample = " .. ((time/dataset:size())*1000) .. 'ms')
     epoch = epoch + 1
-
-    if params.snapshot ~= nil && epoch % params.snapshot == 0 then
-        local filename = paths.concat(opt.save, "_epoch_" .. epoch .. ".net")
-        os.execute('mkdir -p ' .. sys.dirname(filename))
-        torch.save(filename, model)
-        --must save std, mean and criterion?
-    end
 end
+
+
 
 print("loading dataset...")
 mnist_dataset = mnist.load_siamese_dataset("/Users/aly/workspace/torch_sandbox/siamese_network/data/mnist.t7/train_32x32.t7")
