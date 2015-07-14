@@ -20,7 +20,7 @@ cmd:option("-learning_rate", 0.001, "learning_rate")
 cmd:option("-momentum", 0.9, "momentum")
 cmd:option("-max_epochs", 2, "maximum epochs")
 cmd:option("-snapshot_dir", "", "snapshot directory")
-cmd:option("-snapshot", nil, "snapshot after how many iterations?")
+cmd:option("-snapshot", 0, "snapshot after how many iterations?")
 
 params = cmd:parse(arg)
 
@@ -37,7 +37,7 @@ function train(data)
         --add random shuffling here
         train_one_epoch(data)
 
-        if params.snapshot ~= nil && epoch % params.snapshot == 0 then -- epoch is global (gotta love lua :p)
+        if params.snapshot > 0 and epoch % params.snapshot == 0 then -- epoch is global (gotta love lua :p)
             local filename = paths.concat(params.save, "_epoch_" .. epoch .. ".net")
             os.execute('mkdir -p ' .. sys.dirname(filename))
             torch.save(filename, model)        
