@@ -19,7 +19,7 @@ cmd:option("-batch_size", 50, "batch size")
 cmd:option("-learning_rate", 0.001, "learning_rate")
 cmd:option("-momentum", 0.9, "momentum")
 cmd:option("-max_epochs", 2, "maximum epochs")
-cmd:option("-snapshot_dir", "", "snapshot directory")
+cmd:option("-snapshot_dir", "./snapshot/", "snapshot directory")
 cmd:option("-snapshot", 0, "snapshot after how many iterations?")
 
 params = cmd:parse(arg)
@@ -37,14 +37,19 @@ function train(data)
         --add random shuffling here
         train_one_epoch(data)
 
-        if params.snapshot > 0 and epoch % params.snapshot == 0 then -- epoch is global (gotta love lua :p)
-            local filename = paths.concat(params.save, "_epoch_" .. epoch .. ".net")
+        if params.snapshot > 0 and (epoch % params.snapshot) == 0 then -- epoch is global (gotta love lua :p)
+            local filename = paths.concat(params.snapshot_dir, "snapshot_epoch_" .. epoch .. ".net")
             os.execute('mkdir -p ' .. sys.dirname(filename))
             torch.save(filename, model)        
             --must save std, mean and criterion?
             if not saved_criterion then
-                local criterion_filename = paths.concat(params.save, "_criterion.net")
+                local criterion_filename = paths.concat(params.snapshot_dir, "_criterion.net")
                 torch.save(criterion_filename, criterion)
+                local dataset_attributes_filename = paths.concat(params.snapshot_dir, "_dataset.params")
+                dataset_attributes = {}
+                dataset_attributes.mean = data.mean
+                dataset_attributes.std = data.std
+                torch.save(dataset_attributes_filename, dataset_attributes)
             end
         end
     end
