@@ -19,7 +19,7 @@ cmd:option("-log", "out.log", "output log file")
 
 params = cmd:parse(arg)
 
-if log ~= "" then
+if params.log ~= "" then
     cmd:log(params.log, params)
 end
 -----------------------------------------------------------------------------

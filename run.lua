@@ -20,13 +20,19 @@ cmd:option("-learning_rate", 0.001, "learning_rate")
 cmd:option("-momentum", 0.9, "momentum")
 cmd:option("-max_epochs", 2, "maximum epochs")
 cmd:option("-snapshot_dir", "./snapshot/", "snapshot directory")
-cmd:option("-snapshot", 0, "snapshot after how many iterations?")
+cmd:option("-snapshot_epoch", 0, "snapshot after how many iterations?")
+
+cmd:option("-weights", "", "pretrained model to begin training from")
 
 params = cmd:parse(arg)
 
 epoch = 0
 batch_size = params.batch_size
 --Load model and criterion
+
+if weights ~= "" then
+    model = torch.load(params.weights)
+end
 
 -- retrieve a view (same memory) of the parameters and gradients of these (wrt loss) of the model (Global)
 parameters, grad_parameters = model:getParameters();
@@ -37,7 +43,7 @@ function train(data)
         --add random shuffling here
         train_one_epoch(data)
 
-        if params.snapshot > 0 and (epoch % params.snapshot) == 0 then -- epoch is global (gotta love lua :p)
+        if params.snapshot_epoch > 0 and (epoch % params.snapshot_epoch) == 0 then -- epoch is global (gotta love lua :p)
             local filename = paths.concat(params.snapshot_dir, "snapshot_epoch_" .. epoch .. ".net")
             os.execute('mkdir -p ' .. sys.dirname(filename))
             torch.save(filename, model)        
