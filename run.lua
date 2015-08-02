@@ -5,35 +5,71 @@ require 'image';
 require 'dataset';
 require 'model';
 
-
 -----------------------------------------------------------------------------
 --------------------- parse command line options ----------------------------
 -----------------------------------------------------------------------------
 cmd = torch.CmdLine()
 cmd:text()
+cmd:text("Arguments")
+cmd:argument("-training_data", "training data (.t7) file")
+cmd:argument("-max_epochs", "maximum epochs")
 cmd:text("Options")
-cmd:option("-gpu", false, "use gpu")
-cmd:option("-training_data", mnist.trainset_path, "training data (.t7) file")
-cmd:option("-log", "out.log", "output log file")
 cmd:option("-batch_size", 50, "batch size")
 cmd:option("-learning_rate", 0.001, "learning_rate")
 cmd:option("-momentum", 0.9, "momentum")
-cmd:option("-max_epochs", 2, "maximum epochs")
 cmd:option("-snapshot_dir", "./snapshot/", "snapshot directory")
 cmd:option("-snapshot_epoch", 0, "snapshot after how many iterations?")
-
+cmd:option("-gpu", false, "use gpu")
 cmd:option("-weights", "", "pretrained model to begin training from")
+cmd:option("-log", "output log file")
 
 params = cmd:parse(arg)
+
+-----------------------------------------------------------------------------
+--------------------- Initialize Variable -----------------------------------
+-----------------------------------------------------------------------------
+if params.log ~= "" then
+   cmd:log(params.log, params)
+   cmd:addTime('torch_benchmarks','%F %T')
+   print("setting log file as "..params.log)
+end
+
+libs = {}
+run_on_cuda = false
+if params.gpu then
+    print("using cudnn")
+    require 'cudnn'
+    libs['SpatialConvolution'] = cudnn.SpatialConvolution
+    libs['SpatialMaxPooling'] = cudnn.SpatialMaxPooling
+    libs['ReLU'] = cudnn.ReLU
+    torch.setdefaulttensortype('torch.CudaTensor')
+    run_on_cuda = true
+else
+    libs['SpatialConvolution'] = nn.SpatialConvolution
+    libs['SpatialMaxPooling'] = nn.SpatialMaxPooling
+    libs['ReLU'] = nn.ReLU
+    torch.setdefaulttensortype('torch.FloatTensor')
+end
 
 epoch = 0
 batch_size = params.batch_size
 --Load model and criterion
 
-if weights ~= "" then
+if params.weights ~= "" then
+    print("loading model from pretained weights in file "..params.weights)
     model = torch.load(params.weights)
+else
+    model = build_model(libs)
 end
 
+if run_on_cuda then
+    model = model:cuda()
+end
+
+
+-----------------------------------------------------------------------------
+--------------------- Training Function -------------------------------------
+-----------------------------------------------------------------------------
 -- retrieve a view (same memory) of the parameters and gradients of these (wrt loss) of the model (Global)
 parameters, grad_parameters = model:getParameters();
 
@@ -124,9 +160,10 @@ function train_one_epoch(dataset)
     epoch = epoch + 1
 end
 
-
-
+-----------------------------------------------------------------------------
+--------------------- Training Function -------------------------------------
+-----------------------------------------------------------------------------
 print("loading dataset...")
-mnist_dataset = mnist.load_siamese_dataset("/Users/aly/workspace/torch_sandbox/siamese_network/data/mnist.t7/train_32x32.t7")
+mnist_dataset = mnist.load_siamese_dataset(params.training_data)
 print("dataset loaded")
 train(mnist_dataset)
