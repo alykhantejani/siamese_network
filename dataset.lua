@@ -57,17 +57,36 @@ function mnist.load_normalized_dataset(filename, mean_, std_)
     return dataset
 end
 
-function mnist.load_siamese_dataset(filename, mean_, std_)
+function mnist.load_siamese_dataset_subset(filename, class_subset)
   local file = torch.load(filename, 'ascii')
   
-  data = file.data:type(torch.getdefaulttensortype())
-  labels = file.labels
 
-  local std = std_ or data:std()
-  local mean = mean_ or data:mean()
+  local indices_in_subset = {}
+
+  local all_data = file.data:type(torch.getdefaulttensortype())
+  local all_labels = file.labels
+  
+  for i = 1, all_labels:size()[1] do
+    if #class_subset == 0 or class_subset[all_labels[i]] ~= nil then
+      table.insert(indices_in_subset, i)
+    end
+  end
+
+  
+  local data = torch.Tensor(#indices_in_subset, all_data:size()[2], all_data:size()[3], all_data:size()[4])
+  local labels = torch.Tensor(#indices_in_subset)
+
+  for i = 1,#indices_in_subset do
+    data[i] = all_data[indices_in_subset[i]]
+    labels[i] = all_labels[indices_in_subset[i]]
+  end
+
+  local std = data:std()
+  local mean = data:mean()
   data:add(-mean);
   data:mul(1.0/std);
     
+
   shuffle = torch.randperm(data:size(1))
   max_index = data:size(1)
   if max_index % 2 ~= 0 then
@@ -120,4 +139,8 @@ function mnist.load_siamese_dataset(filename, mean_, std_)
                         end })
 
   return dataset
+end
+
+function mnist.load_siamese_dataset(filename)
+  return mnist.load_siamese_dataset_subset(filename, {})
 end
